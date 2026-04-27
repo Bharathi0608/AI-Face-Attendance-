@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Portal — FaceAttend</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0a0f;
+    --surface:  #12121a;
+    --surface2: #1a1a26;
+    --border:   #1e1e2e;
+    --accent:   #ff6b6b;
+    --accent2:  #7c5cfc;
+    --green:    #00d4aa;
+    --amber:    #f0a500;
+    --text:     #e8e8f0;
+    --muted:    #6b6b85;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background glow */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 70% 20%, rgba(255,107,107,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse at 20% 80%, rgba(124,92,252,0.06) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Grid overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,107,107,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,107,107,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .back-link {
+    position: fixed;
+    top: 20px; left: 20px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--text); }
+
+  .container {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* ── STEP INDICATOR ── */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 36px;
+  }
+  .step {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    transition: all 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .step.active  { border-color: var(--accent);  color: var(--accent);  background: rgba(255,107,107,0.12); }
+  .step.done    { border-color: var(--green);   color: var(--green);   background: rgba(0,212,170,0.12); }
+  .step-label   { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .step-line    { flex: 1; height: 2px; background: var(--border); border-radius: 2px; max-width: 50px; transition: background 0.4s; }
+  .step-line.done { background: var(--green); }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 48px;
+    width: 100%; max-width: 540px;
+    animation: fadeUp 0.45s ease;
+  }
+  .card-icon { font-size: 48px; margin-bottom: 16px; text-align: center; }
+  .card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px; font-weight: 800;
+    text-align: center; margin-bottom: 8px;
+  }
+  .card .subtitle {
+    color: var(--muted); text-align: center;
+    font-size: 14px; margin-bottom: 32px; line-height: 1.6;
+  }
+
+  /* ── SELECT ── */
+  .form-group { margin-bottom: 20px; }
+  label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--muted); letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  select {
+    width: 100%; padding: 14px 44px 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text); font-family: inherit; font-size: 15px;
+    outline: none; transition: border-color 0.2s; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b85' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* ── CLASS PREVIEW ── */
+  .class-info {
+    background: var(--surface2); border-radius: 14px;
+    padding: 16px 20px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 14px;
+    border: 1px solid var(--border);
+    animation: fadeUp 0.3s ease;
+  }
+  .class-info-badge {
+    background: rgba(124,92,252,0.15); color: var(--accent2);
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; white-space: nowrap;
+  }
+  .class-info-name  { font-weight: 500; font-size: 15px; }
+  .class-info-meta  { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 16px;
+    border: none; border-radius: 16px;
+    font-family: inherit; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.25s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #ff3f3f);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(255,107,107,0.25);
+  }
+  .btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,107,107,0.35); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 14px;
+    padding: 12px; border-radius: 12px; margin-top: 12px;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--text); }
+
+  /* ── TIP ── */
+  .scan-tip {
+    background: rgba(124,92,252,0.08);
+    border: 1px solid rgba(124,92,252,0.2);
+    border-radius: 12px; padding: 14px 18px;
+    font-size: 13px; color: var(--muted);
+    margin-top: 20px; line-height: 1.6;
+  }
+  .scan-tip strong { color: var(--text); }
+
+  /* ── WEBCAM SCREEN ── */
+  #screen-scan { padding: 36px 40px; }
+  .webcam-wrapper {
+    position: relative;
+    width: 100%; aspect-ratio: 4/3;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+    border: 2px solid var(--border);
+    margin-bottom: 20px;
+  }
+  #webcam-video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1); /* mirror */
+  }
+
+  /* Scanning laser line */
+  .scan-laser {
+    position: absolute;
+    left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    box-shadow: 0 0 16px rgba(255,107,107,0.7);
+    animation: laserSweep 2s ease-in-out infinite;
+    top: 0;
+  }
+  @keyframes laserSweep {
+    0%   { top: 5%;  opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { top: 95%; opacity: 0; }
+  }
+
+  /* Corner brackets */
+  .scan-corners {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  .scan-corners::before, .scan-corners::after,
+  .sc2::before, .sc2::after {
+    content: '';
+    position: absolute;
+    width: 30px; height: 30px;
+    border-color: var(--accent);
+    border-style: solid;
+    opacity: 0.85;
+  }
+  .scan-corners::before { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .scan-corners::after  { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .sc2::before { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .sc2::after  { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+  /* Overlay banner when matched */
+  .match-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.7);
+    border-radius: 18px;
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+  .match-overlay.show { opacity: 1; }
+  .match-overlay .mo-icon { font-size: 64px; margin-bottom: 12px; animation: bounceIn 0.5s ease; }
+  .match-overlay .mo-name {
+    font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800;
+    color: var(--green); margin-bottom: 4px;
+  }
+  .match-overlay .mo-roll { color: var(--muted); font-size: 13px; }
+
+  @keyframes bounceIn {
+    0%   { transform: scale(0.4); opacity: 0; }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Status bar under camera */
+  .cam-status {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border-radius: 12px;
+    padding: 12px 16px; font-size: 13px; color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .cam-status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: blink 1s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .cam-status.green-status .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  #cam-status-text { flex: 1; }
+
+  /* ── RESULT SCREEN ── */
+  .result-card {
+    border-radius: 20px; padding: 32px; text-align: center; margin-bottom: 16px;
+  }
+  .result-present { background: rgba(0,212,170,0.08); border: 2px solid rgba(0,212,170,0.3); }
+  .result-absent  { background: rgba(255,107,107,0.08); border: 2px solid rgba(255,107,107,0.3); }
+  .result-icon  { font-size: 56px; margin-bottom: 12px; }
+  .result-status {
+    font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 8px;
+  }
+  .result-present .result-status { color: var(--green); }
+  .result-absent  .result-status { color: var(--accent); }
+  .result-detail  { color: var(--muted); font-size: 14px; }
+
+  /* Utilities */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .hidden { display: none !important; }
+
+  /* ── COUNTDOWN BAR ── */
+  .countdown-wrap {
+    margin-bottom: 16px;
+  }
+  .countdown-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--muted); margin-bottom: 6px;
+  }
+  .countdown-label span { font-weight: 600; color: var(--text); }
+  .countdown-track {
+    height: 6px; background: var(--border); border-radius: 99px; overflow: hidden;
+  }
+  .countdown-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 99px;
+    width: 100%;
+    transition: width 1s linear;
+  }
+</style>
+</head>
+<body>
+<a class="back-link" href="/">← All portals</a>
+
+<div class="container">
+
+  <!-- STEP INDICATOR -->
+  <div class="steps">
+    <div class="step active" id="step1">1</div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="step2">2</div>
+    <div class="step-line" id="line2"></div>
+    <div class="step" id="step3">✓</div>
+  </div>
+
+  <!-- ───── STEP 1 : SELECT CLASS ───── -->
+  <div id="screen-select" class="card">
+    <div class="card-icon">📚</div>
+    <h2>Join a Class</h2>
+    <p class="subtitle">Select your active class session, then open the webcam to mark attendance with face recognition.</p>
+
+    <div class="form-group">
+      <label>Active Class Session</label>
+      <select id="class-select">
+        <option value="">Loading classes…</option>
+      </select>
+    </div>
+
+    <div id="class-preview" class="hidden"></div>
+
+    <button id="join-btn" class="btn btn-primary" onclick="goToScan()" disabled>
+      📷 &nbsp;Open Camera &amp; Scan Face →
+    </button>
+
+    <div class="scan-tip">
+      <strong>How it works:</strong> Select your class, then allow camera access. 
+      The system scans your face in real time and marks you present automatically.
+    </div>
+  </div>
+
+  <!-- ───── STEP 2 : WEBCAM SCAN ───── -->
+  <div id="screen-scan" class="card hidden">
+    <h2 style="text-align:center; margin-bottom:6px;">Face Scan</h2>
+    <p class="subtitle" id="scan-class-name" style="margin-bottom:20px;"></p>
+
+    <!-- Camera feed -->
+    <div class="webcam-wrapper" id="webcam-wrapper">
+      <video id="webcam-video" autoplay playsinline muted></video>
+      <canvas id="snap-canvas" class="hidden"></canvas>
+
+      <!-- Scan overlay elements -->
+      <div class="scan-laser" id="scan-laser"></div>
+      <div class="scan-corners"></div>
+      <div class="sc2"></div>
+
+      <!-- Match success overlay -->
+      <div class="match-overlay" id="match-overlay">
+        <div class="mo-icon">✅</div>
+        <div class="mo-name" id="mo-name">Student Name</div>
+        <div class="mo-roll" id="mo-roll">Roll: —</div>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="cam-status" id="cam-status">
+      <div class="dot"></div>
+      <span id="cam-status-text">Initializing camera…</span>
+    </div>
+
+    <!-- Countdown bar -->
+    <div class="countdown-wrap" id="countdown-wrap">
+      <div class="countdown-label">
+        <span id="countdown-msg">Scanning…</span>
+        <span id="countdown-secs">10s</span>
+      </div>
+      <div class="countdown-track">
+        <div class="countdown-bar" id="countdown-bar"></div>
+      </div>
+    </div>
+
+    <!-- Cancel -->
+    <button class="btn btn-secondary" onclick="cancelScan()">✕ &nbsp;Cancel &amp; go back</button>
+  </div>
+
+  <!-- ───── STEP 3 : RESULT ───── -->
+  <div id="screen-result" class="card hidden">
+    <div id="result-content"></div>
+    <button class="btn btn-secondary" onclick="resetFlow()">← Mark attendance for another class</button>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   State
+════════════════════════════════════════════════════════════════════ */
+let allClasses    = [];
+let selectedClass = null;
+let mediaStream   = null;
+let scanInterval  = null;
+let scanTimeout   = null;   // 10-second hard stop
+let scanDone      = false;
+
+/* ════════════════════════════════════════════════════════════════════
+   STEP HELPERS
+════════════════════════════════════════════════════════════════════ */
+function setStep(n) {
+  for (let i = 1; i <= 3; i++) {
+    const s = document.getElementById('step' + i);
+    s.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    if (i < 3) {
+      const l = document.getElementById('line' + i);
+      if (l) l.className = 'step-line' + (i < n ? ' done' : '');
+    }
+  }
+}
+
+function showScreen(id) {
+  ['screen-select', 'screen-scan', 'screen-result'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   LOAD CLASSES
+════════════════════════════════════════════════════════════════════ */
+async function loadClasses() {
+  try {
+    const res = await fetch('/api/classes');
+    allClasses = await res.json();
+    const sel = document.getElementById('class-select');
+
+    if (!allClasses.length) {
+      sel.innerHTML = '<option value="">No active classes found</option>';
+      return;
+    }
+
+    sel.innerHTML = '<option value="">— Choose your class —</option>' +
+      allClasses.map(c =>
+        `<option value="${c.class_id}">${c.name} · ${c.class_id}</option>`
+      ).join('');
+  } catch (e) {
+    document.getElementById('class-select').innerHTML =
+      '<option value="">Error loading classes</option>';
+  }
+}
+
+document.getElementById('class-select').addEventListener('change', function() {
+  const classId = this.value;
+  const btn     = document.getElementById('join-btn');
+  const preview = document.getElementById('class-preview');
+
+  if (!classId) {
+    btn.disabled = true;
+    preview.classList.add('hidden');
+    selectedClass = null;
+    return;
+  }
+
+  selectedClass = allClasses.find(c => c.class_id === classId);
+  if (selectedClass) {
+    preview.classList.remove('hidden');
+    preview.innerHTML = `
+      <div class="class-info">
+        <div class="class-info-badge">${selectedClass.class_id}</div>
+        <div>
+          <div class="class-info-name">${selectedClass.name}</div>
+          <div class="class-info-meta">
+            ${(selectedClass.student_ids || []).length} enrolled
+            ${selectedClass.schedule ? '· ' + selectedClass.schedule : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+  btn.disabled = false;
+});
+
+/* ════════════════════════════════════════════════════════════════════
+   STEP 1 → 2  (open camera)
+════════════════════════════════════════════════════════════════════ */
+async function goToScan() {
+  if (!selectedClass) return;
+
+  setStep(2);
+  showScreen('screen-scan');
+  document.getElementById('scan-class-name').textContent = selectedClass.name;
+
+  setCamStatus('Requesting camera access…', false);
+
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    const video = document.getElementById('webcam-video');
+    video.srcObject = mediaStream;
+    await video.play();
+
+    setCamStatus('Camera active — look directly at the camera', false);
+
+    // Give a moment for camera to warm up, then start sending frames
+    setTimeout(startFrameLoop, 1500);
+
+  } catch (err) {
+    setCamStatus('⚠️ Camera access denied — ' + err.message, false);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   FRAME CAPTURE LOOP  (10-second timeout)
+════════════════════════════════════════════════════════════════════ */
+const SCAN_TIMEOUT_MS = 10000;   // 10 seconds
+
+function startFrameLoop() {
+  scanDone = false;
+  document.getElementById('scan-laser').style.display = '';
+  setCamStatus('Scanning… Keep your face centred', false);
+
+  // Start countdown bar
+  const bar = document.getElementById('countdown-bar');
+  bar.style.width = '100%';
+  // Force a reflow so the transition starts from 100 %
+  bar.getBoundingClientRect();
+  bar.style.width = '0%';
+
+  // Live seconds display
+  let secsLeft = Math.round(SCAN_TIMEOUT_MS / 1000);
+  document.getElementById('countdown-secs').textContent = secsLeft + 's';
+  document.getElementById('countdown-msg').textContent = 'Scanning… look at the camera';
+
+  const secTick = setInterval(() => {
+    secsLeft--;
+    const el = document.getElementById('countdown-secs');
+    if (el) el.textContent = Math.max(secsLeft, 0) + 's';
+  }, 1000);
+
+  // Hard stop after 10 s
+  scanTimeout = setTimeout(() => {
+    clearInterval(secTick);
+    if (!scanDone) onScanTimeout();
+  }, SCAN_TIMEOUT_MS);
+
+  // Send a frame every 1.5 seconds
+  scanInterval = setInterval(sendFrame, 1500);
+}
+
+async function sendFrame() {
+  if (scanDone) return;
+
+  const video  = document.getElementById('webcam-video');
+  const canvas = document.getElementById('snap-canvas');
+
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+
+  const ctx = canvas.getContext('2d');
+  // Un-mirror before sending to server (server sees normal orientation)
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  const frameB64 = canvas.toDataURL('image/jpeg', 0.85);
+
+  try {
+    const res  = await fetch('/api/attendance/scan-frame', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ class_id: selectedClass.class_id, frame: frameB64 })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      setCamStatus('⚠️ ' + data.error, false);
+      return;
+    }
+
+    if (data.matched) {
+      onMatchFound(data);
+    } else {
+      const hints = {
+        no_face:    'No face detected — move closer or improve lighting',
+        no_match:   'Face not recognised — make sure you\'re enrolled in this class',
+        no_students:'No students enrolled in this class yet'
+      };
+      setCamStatus(hints[data.reason] || 'Scanning…', false);
+    }
+
+  } catch (e) {
+    setCamStatus('Network error — retrying…', false);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MATCH SUCCESS
+════════════════════════════════════════════════════════════════════ */
+function onMatchFound(data) {
+  if (scanDone) return;
+  scanDone = true;
+  clearInterval(scanInterval);
+  clearTimeout(scanTimeout);
+
+  // Stop laser sweep
+  document.getElementById('scan-laser').style.display = 'none';
+
+  // Show success overlay on video
+  document.getElementById('mo-name').textContent = data.name;
+  document.getElementById('mo-roll').textContent = data.email + ' · Roll: ' + data.roll_number;
+  document.getElementById('match-overlay').classList.add('show');
+
+  setCamStatus('✅  Attendance marked for ' + data.name, true);
+
+  // After 2 s → go to result screen
+  setTimeout(() => {
+    stopCamera();
+    showResultScreen(data);
+  }, 2000);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TIMEOUT — no match in 10 s
+════════════════════════════════════════════════════════════════════ */
+function onScanTimeout() {
+  if (scanDone) return;
+  scanDone = true;
+  clearInterval(scanInterval);
+
+  document.getElementById('scan-laser').style.display = 'none';
+  setCamStatus('⚠️ Time up — face not recognised', false);
+
+  setTimeout(() => {
+    stopCamera();
+    showNoMatchScreen();
+  }, 1200);
+}
+
+function showNoMatchScreen() {
+  setStep(3);
+  showScreen('screen-result');
+
+  document.getElementById('result-content').innerHTML = `
+    <div class="result-card result-absent">
+      <div class="result-icon">❌</div>
+      <div class="result-status">Not Recognised</div>
+      <div class="result-detail" style="margin-top:8px; line-height:1.7;">
+        Your face was not matched within 10 seconds.<br>
+        Make sure you are <strong style="color:var(--text);">enrolled in this class</strong>
+        and your face photo is registered.
+      </div>
+      <div style="margin-top:18px; background:rgba(255,107,107,0.08); border-radius:10px;
+                  padding:10px 14px; font-size:12px; color:var(--muted);">
+        Class: <strong style="color:var(--text);">${selectedClass.name}</strong>
+        &nbsp;·&nbsp; ${selectedClass.class_id}
+      </div>
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   RESULT SCREEN
+════════════════════════════════════════════════════════════════════ */
+function showResultScreen(data) {
+  setStep(3);
+  showScreen('screen-result');
+
+  document.getElementById('result-content').innerHTML = `
+    <div class="result-card result-present">
+      <div class="result-icon">✅</div>
+      <div class="result-status">Present!</div>
+      <div class="result-detail" style="margin-top:8px; font-size:17px; font-weight:500; color:var(--text);">
+        ${data.name}
+      </div>
+      <div class="result-detail" style="margin-top:2px; color:var(--muted); font-size:13px;">
+        ${data.email}
+      </div>
+      <div class="result-detail" style="margin-top:4px;">
+        Roll No: ${data.roll_number}
+      </div>
+      <div class="result-detail" style="margin-top:12px;">
+        Class: <strong style="color:var(--text);">${selectedClass.name}</strong>
+      </div>
+      <div style="margin-top:16px; background:rgba(0,212,170,0.1); border-radius:10px; padding:10px 14px; font-size:12px; color:var(--muted);">
+        ${new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
+        &nbsp;·&nbsp; ${new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' })}
+      </div>
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════════════════════════════ */
+function setCamStatus(msg, isGreen) {
+  document.getElementById('cam-status-text').textContent = msg;
+  document.getElementById('cam-status').classList.toggle('green-status', isGreen);
+}
+
+function stopCamera() {
+  clearInterval(scanInterval);
+  clearTimeout(scanTimeout);
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+}
+
+function cancelScan() {
+  stopCamera();
+  setStep(1);
+  showScreen('screen-select');
+  document.getElementById('match-overlay').classList.remove('show');
+}
+
+function resetFlow() {
+  selectedClass = null;
+  document.getElementById('class-select').value = '';
+  document.getElementById('class-preview').classList.add('hidden');
+  document.getElementById('join-btn').disabled = true;
+  document.getElementById('match-overlay').classList.remove('show');
+  setStep(1);
+  showScreen('screen-select');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════════════ */
+loadClasses();
+</script>
+</body>
+</html>

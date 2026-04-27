@@ -1,0 +1,828 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — FaceAttend</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  #classes-table td {
+  padding: 10px;
+  white-space: nowrap;   /* 🔥 IMPORTANT */
+}
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a26;
+    --border: #1e1e2e; --accent: #7c5cfc; --accent-dim: rgba(124,92,252,0.12);
+    --green: #00d4aa; --red: #ff6b6b; --amber: #f0a500;
+    --text: #e8e8f0; --muted: #6b6b85;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); position: relative;
+  }
+  #login-screen::before {
+    content:''; position:fixed; inset:0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(124,92,252,0.1) 0%, transparent 60%);
+    pointer-events:none;
+  }
+  .login-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    padding: 48px; width: 100%; max-width: 420px; position: relative; z-index: 1;
+    animation: fadeUp 0.6s ease;
+  }
+  .login-logo { font-size: 36px; margin-bottom: 8px; }
+  .login-card h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .login-card p { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  .form-group { margin-bottom: 20px; }
+  label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  input[type="email"], input[type="password"], input[type="text"], input[type="number"], select, textarea {
+    width: 100%; padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-family: inherit; font-size: 15px; outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px;
+    border: none; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center; }
+  .btn-primary:hover { background: #6a4be0; transform: translateY(-1px); }
+  .btn-danger { background: rgba(255,107,107,0.15); color: var(--red); border: 1px solid rgba(255,107,107,0.2); }
+  .btn-danger:hover { background: rgba(255,107,107,0.25); }
+  .btn-success { background: rgba(0,212,170,0.15); color: var(--green); border: 1px solid rgba(0,212,170,0.2); }
+  .btn-success:hover { background: rgba(0,212,170,0.25); }
+  .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+  .error-msg { color: var(--red); font-size: 13px; margin-top: 12px; display: none; }
+
+  /* DASHBOARD LAYOUT */
+  #dashboard { display: none; min-height: 100vh; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 28px 0; z-index: 100; display: flex; flex-direction: column;
+  }
+  .sidebar-brand {
+    padding: 0 24px 24px; border-bottom: 1px solid var(--border);
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-brand span { font-size: 24px; }
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 24px;
+    cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500;
+    transition: all 0.2s; border-left: 3px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+  .nav-icon { font-size: 18px; width: 20px; text-align: center; }
+  .sidebar-footer { padding: 16px 24px; border-top: 1px solid var(--border); }
+
+  .main-content { margin-left: 240px; padding: 40px; min-height: 100vh; }
+  .page-header { margin-bottom: 32px; }
+  .page-header h1 { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; }
+  .page-header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  /* STAT CARDS */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; }
+  .stat-card.s-purple .stat-value { color: var(--accent); }
+  .stat-card.s-green .stat-value  { color: var(--green); }
+  .stat-card.s-amber .stat-value  { color: var(--amber); }
+
+  /* SECTION */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px; margin-bottom: 24px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  td { padding: 14px 16px; border-bottom: 1px solid rgba(30,30,46,0.6); font-size: 14px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    background: var(--accent-dim); display: flex; align-items: center;
+    justify-content: center; font-size: 14px; font-weight: 600;
+    color: var(--accent);
+  }
+  .avatar img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+  .name-cell { display: flex; align-items: center; gap: 12px; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .badge-purple { background: rgba(124,92,252,0.15); color: var(--accent); }
+  .badge-green  { background: rgba(0,212,170,0.15);  color: var(--green); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 1000; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    padding: 36px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+    animation: fadeUp 0.3s ease;
+  }
+  .modal h3 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+  .modal-footer { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 12px; padding: 4px; margin-bottom: 28px; }
+  .tab { flex: 1; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--muted); transition: all 0.2s; }
+  .tab.active { background: var(--surface); color: var(--text); font-weight: 500; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* FILE UPLOAD */
+  .file-drop {
+    border: 2px dashed var(--border); border-radius: 16px; padding: 32px;
+    text-align: center; cursor: pointer; transition: border-color 0.2s;
+  }
+  .file-drop:hover { border-color: var(--accent); }
+  .file-drop input { display: none; }
+  .file-drop p { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .preview-img { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; margin: 0 auto 8px; display: none; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 20px; font-size: 14px; display: flex; align-items: center; gap: 10px;
+    animation: fadeUp 0.3s ease; max-width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .toast.success { border-color: rgba(0,212,170,0.4); }
+  .toast.error   { border-color: rgba(255,107,107,0.4); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .hidden { display: none !important; }
+  .empty-state { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .loading { text-align: center; padding: 32px; color: var(--muted); }
+  .select-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🛡</div>
+    <h2>Admin Portal</h2>
+    <p>Sign in with your admin credentials to manage the system.</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="admin-email" value="admin@gmail.com" placeholder="admin@school.edu">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="admin-pass" value="Admin@1234" placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary" onclick="adminLogin()">Sign In to Dashboard</button>
+    <div class="error-msg" id="login-err">Invalid credentials. Please try again.</div>
+    <p style="margin-top:20px;font-size:13px;color:var(--muted);text-align:center;">
+      <a href="/" style="color:var(--accent);text-decoration:none;">← Back to portals</a>
+    </p>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div id="dashboard">
+  <div class="sidebar">
+    <div class="sidebar-brand"><span>🛡</span> Admin</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showTab('overview')">
+        <span class="nav-icon">📊</span> Overview
+      </div>
+      <div class="nav-item" onclick="showTab('teachers')">
+        <span class="nav-icon">🎓</span> Teachers
+      </div>
+      <div class="nav-item" onclick="showTab('students')">
+        <span class="nav-icon">👤</span> Students
+      </div>
+      <div class="nav-item" onclick="showTab('classes')">
+        <span class="nav-icon">📚</span> Classes
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item" onclick="logout()" style="border-radius:10px;">
+        <span class="nav-icon">🚪</span> Logout
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content">
+
+    <!-- OVERVIEW -->
+    <div id="tab-overview" class="tab-content active">
+      <div class="page-header">
+        <h1>Overview</h1>
+        <p>System-wide snapshot</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card s-purple">
+          <div class="stat-label">Teachers</div>
+          <div class="stat-value" id="stat-teachers">—</div>
+        </div>
+        <div class="stat-card s-green">
+          <div class="stat-label">Students</div>
+          <div class="stat-value" id="stat-students">—</div>
+        </div>
+        <div class="stat-card s-amber">
+          <div class="stat-label">Classes</div>
+          <div class="stat-value" id="stat-classes">—</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Recent Teachers</div>
+          <button class="btn btn-sm btn-success" onclick="showTab('teachers')">Manage →</button>
+        </div>
+        <div id="overview-teachers-list" class="loading">Loading…</div>
+      </div>
+    </div>
+
+    <!-- TEACHERS -->
+    <div id="tab-teachers" class="tab-content">
+      <div class="page-header">
+        <h1>Teachers</h1>
+        <p>Add and manage teacher accounts</p>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">All Teachers</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-teacher')">+ Add Teacher</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Subject</th><th>Classes</th><th></th></tr></thead>
+            <tbody id="teachers-table"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div id="tab-students" class="tab-content">
+      <div class="page-header">
+        <h1>Students</h1>
+        <p>Enroll students with face registration</p>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">All Students</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-student')">+ Add Student</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Roll No.</th><th>Email</th><th>Classes</th><th></th></tr></thead>
+            <tbody id="students-table"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLASSES -->
+    <div id="tab-classes" class="tab-content">
+      <div class="page-header">
+        <h1>Classes</h1>
+        <p>Create classes and assign teachers and students</p>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">All Classes</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-class')">+ Create Class</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Class Name</th><th>ID</th><th>Teacher</th><th>Schedule</th><th>Students</th><th></th></tr></thead>
+            <tbody id="classes-table"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Add Teacher -->
+<div class="modal-overlay" id="modal-add-teacher">
+  <div class="modal">
+    <h3>➕ Add Teacher</h3>
+    <div class="select-row">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="t-name" placeholder="Dr. Jane Smith">
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <input type="text" id="t-subject" placeholder="Mathematics">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Gmail Address</label>
+      <input type="email" id="t-email" placeholder="teacher@gmail.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="t-pass" placeholder="Min 8 characters">
+    </div>
+    <div id="t-error" class="error-msg"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-teacher')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddTeacher()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Student -->
+<div class="modal-overlay" id="modal-add-student">
+  <div class="modal">
+    <h3>➕ Add Student</h3>
+    <div class="select-row">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="s-name" placeholder="Alice Kumar">
+      </div>
+      <div class="form-group">
+        <label>Roll Number</label>
+        <input type="text" id="s-roll" placeholder="CS2024001">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="s-email" placeholder="student@college.edu">
+    </div>
+    <div class="form-group">
+      <label>Face Photo</label>
+      <div class="file-drop" onclick="document.getElementById('s-photo').click()">
+        <img id="s-preview" class="preview-img" src="" alt="preview">
+        <div style="font-size:32px;">📷</div>
+        <p>Click to upload a clear frontal face photo</p>
+        <p style="font-size:12px;margin-top:4px;">JPEG / PNG — face must be clearly visible</p>
+        <input type="file" id="s-photo" accept="image/*" onchange="previewPhoto(this)">
+      </div>
+    </div>
+    <div id="s-error" class="error-msg"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-student')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddStudent()">Register Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Class -->
+<div class="modal-overlay" id="modal-add-class">
+  <div class="modal">
+    <h3>📚 Create Class</h3>
+    <div class="form-group">
+      <label>Class Name</label>
+      <input type="text" id="c-name" placeholder="Algorithms & Data Structures">
+    </div>
+    <div class="form-group">
+      <label>Assign Teacher</label>
+      <select id="c-teacher">
+        <option value="">— Select a teacher —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Schedule</label>
+      <input type="text" id="c-schedule" placeholder="Mon/Wed 9:00–10:30 AM">
+    </div>
+    <div id="c-error" class="error-msg"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-class')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddClass()">Create Class</button>
+    </div>
+  </div>
+</div>
+
+<!-- Enroll Student in Class -->
+<div class="modal-overlay" id="modal-enroll">
+  <div class="modal">
+    <h3>📎 Enroll Student</h3>
+    <div class="form-group">
+      <label>Class</label>
+      <select id="enroll-class-id"></select>
+    </div>
+    <div class="form-group">
+      <label>Student</label>
+      <select id="enroll-student-id"></select>
+    </div>
+    <div id="enroll-error" class="error-msg"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-enroll')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEnroll()">Enroll</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allTeachers = [], allStudents = [], allClasses = [];
+
+// ─── AUTH ───────────────────────────────────────────────────
+async function adminLogin() {
+  const email = document.getElementById('admin-email').value;
+  const pass  = document.getElementById('admin-pass').value;
+
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+
+    if (res.ok) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      loadAll();
+    } else {
+      document.getElementById('login-err').style.display = 'block';
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Login failed");
+  }
+}
+
+
+
+async function logout() {
+  await fetch('/api/logout', {method:'POST'});
+  location.href = '/';
+}
+
+// ─── NAVIGATION ────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => {
+    if (el.textContent.toLowerCase().includes(name)) el.classList.add('active');
+  });
+  if (name === 'teachers') loadTeachers();
+  if (name === 'students') loadStudents();
+  if (name === 'classes')  loadClasses();
+}
+
+// ─── LOAD DATA ──────────────────────────────────────────────
+async function loadAll() {
+  const [t, s, c] = await Promise.all([
+    fetch('/api/teachers').then(r=>r.json()),
+    fetch('/api/students').then(r=>r.json()),
+    fetch('/api/classes').then(r=>r.json())
+  ]);
+  allTeachers = t; allStudents = s; allClasses = c;
+  document.getElementById('stat-teachers').textContent = t.length;
+  document.getElementById('stat-students').textContent = s.length;
+  document.getElementById('stat-classes').textContent  = c.length;
+  renderOverviewTeachers(t.slice(0,5));
+}
+
+function renderOverviewTeachers(teachers) {
+  const el = document.getElementById('overview-teachers-list');
+  if (!teachers.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🎓</div><p>No teachers added yet.</p></div>'; return; }
+  el.innerHTML = `<table style="width:100%; table-layout: fixed; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th style="width:30%; text-align: left; padding: 12px 8px; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Name</th>
+        <th style="width:45%; text-align: left; padding: 12px 8px; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Email</th>
+        <th style="width:25%; text-align: left; padding: 12px 8px; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Subject</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${teachers.map(t=>`
+        <tr>
+          <td style="padding: 12px 8px; text-align: left;"><div class="name-cell"><div class="avatar">${t.name?.[0]||'?'}</div>${t.name}</div></td>
+          <td style="padding: 12px 8px; text-align: left; color:var(--muted); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.email}</td>
+          <td style="padding: 12px 8px; text-align: left;"><span class="badge badge-purple" style="margin: 0;">${t.subject||'—'}</span></td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function loadTeachers() {
+  const res = await fetch('/api/teachers');
+  allTeachers = await res.json();
+  const tbody = document.getElementById('teachers-table');
+  if (!allTeachers.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="icon">🎓</div><p>No teachers yet. Add one!</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = allTeachers.map(t => `
+    <tr>
+      <td style="width:30%"><div class="name-cell"><div class="avatar">${t.name?.[0]||'?'}</div>${t.name}</div></td>
+      <td style="color:var(--muted); width:35%; overflow: hidden; text-overflow: ellipsis;">${t.email}</td>
+      <td style="width:15%"><span class="badge badge-purple">${t.subject||'—'}</span></td>
+      <td style="width:10%">${(t.class_ids||[]).length} class(es)</td>
+      <td style="width:10%; text-align: right;"><button class="btn btn-danger btn-sm" onclick="removeTeacher('${t.uid}','${t.name}')">Delete</button></td>
+    </tr>`).join('');
+}
+
+async function loadStudents() {
+  const res = await fetch('/api/students');
+  allStudents = await res.json();
+  const tbody = document.getElementById('students-table');
+  if (!allStudents.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="icon">👤</div><p>No students yet. Add one!</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = allStudents.map(s => `
+    <tr>
+      <td style="width:30%"><div class="name-cell">
+        ${s.image_url ? `<img src="${s.image_url}" class="avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover">` : `<div class="avatar">${s.name?.[0]||'?'}</div>`}
+        ${s.name}</div></td>
+      <td style="width:15%"><span class="badge badge-green">${s.roll_number||'—'}</span></td>
+      <td style="color:var(--muted); width:35%; overflow: hidden; text-overflow: ellipsis;">${s.email||'—'}</td>
+      
+      <td style="width:10%">${(s.class_ids||[]).length} class(es)</td>
+      <td style="width:10%; text-align: right;"><button class="btn btn-danger btn-sm" onclick="removeStudent('${s.uid}','${s.name}')">Delete</button></td>
+    </tr>`).join('');
+}
+
+
+async function loadClasses() {
+  const [classRes, teacherRes] = await Promise.all([
+    fetch('/api/classes'),
+    fetch('/api/teachers')
+  ]);
+
+  const classes = await classRes.json();
+  const teachers = await teacherRes.json();
+
+  allClasses = classes;   // 🔥 VERY IMPORTANT
+
+  console.log("CLASSES:", classes);
+  console.log("TEACHERS:", teachers);
+
+  // map teacher_id → name
+  const teacherMap = {};
+  teachers.forEach(t => {
+    teacherMap[t.uid] = t.name;
+  });
+
+  const tbody = document.getElementById('classes-table');
+
+  if (!classes.length) {
+    tbody.innerHTML = `<tr><td colspan="6">No classes found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = classes.map(c => `
+    <tr>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.class_id}</td>
+      <td style="min-width:150px">
+  ${teacherMap[c.teacher_uid] || "Unknown"}
+</td> <!-- 🔥 FIX -->
+      <td>${c.schedule || "-"}</td>
+      <td>${(c.student_ids || []).length} student(s)</td>
+      <td>
+  <button class="btn btn-success btn-sm"
+    onclick="openEnrollModal('${c.class_id}')">
+    Enroll
+  </button>
+
+  <button class="btn btn-danger btn-sm"
+    onclick="deleteClass('${c.class_id}')"
+    style="margin-left:6px;">
+    Delete
+  </button>
+</td>
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// ─── MODALS ────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'modal-add-class') populateTeacherSelect();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function populateTeacherSelect() {
+  const sel = document.getElementById('c-teacher');
+  sel.innerHTML = '<option value="">— Select a teacher —</option>' +
+    allTeachers.map(t => `<option value="${t.uid}">${t.name} (${t.subject||'—'})</option>`).join('');
+}
+
+
+function openEnrollModal(classId) {
+  const cSel = document.getElementById('enroll-class-id');
+  const sSel = document.getElementById('enroll-student-id');
+
+  // 🔥 FIX: detect correct id dynamically
+  cSel.innerHTML = allClasses.map(c => {
+    const id = c.class_id || c.id || c.uid;   // 👈 KEY FIX
+    return `<option value="${id}" ${id === classId ? 'selected' : ''}>
+      ${c.name} (${id})
+    </option>`;
+  }).join('');
+
+  sSel.innerHTML = allStudents.map(s =>
+    `<option value="${s.uid}">
+      ${s.name} — ${s.roll_number}
+    </option>`
+  ).join('');
+
+  openModal('modal-enroll');
+}
+
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const prev = document.getElementById('s-preview');
+  prev.src = url; prev.style.display = 'block';
+}
+
+// ─── SUBMIT HANDLERS ───────────────────────────────────────
+async function submitAddTeacher() {
+  const body = {
+    name: document.getElementById('t-name').value.trim(),
+    email: document.getElementById('t-email').value.trim(),
+    password: document.getElementById('t-pass').value,
+    subject: document.getElementById('t-subject').value.trim()
+  };
+  if (!body.name || !body.email || !body.password) return showErr('t-error','All fields required.');
+  const res = await fetch('/api/teachers', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (data.success) {
+    closeModal('modal-add-teacher'); loadTeachers(); loadAll();
+    toast('✅ Teacher ' + body.name + ' added!', 'success');
+  } else { showErr('t-error', data.message); }
+}
+
+async function submitAddStudent() {
+  const form = new FormData();
+  form.append('name',   document.getElementById('s-name').value.trim());
+  form.append('email',  document.getElementById('s-email').value.trim());
+  form.append('roll_number', document.getElementById('s-roll').value.trim());
+  const file = document.getElementById('s-photo').files[0];
+  if (!file) return showErr('s-error','Please upload a face photo.');
+  form.append('face_image', file);
+  const res = await fetch('/api/students', {method:'POST', body: form});
+  const data = await res.json();
+  if (data.success) {
+    closeModal('modal-add-student'); loadStudents(); loadAll();
+    toast('✅ Student registered with face data!', 'success');
+  } else { showErr('s-error', data.message); }
+}
+
+async function submitAddClass() {
+    const name = document.getElementById('c-name').value;
+    const teacher_uid = document.getElementById('c-teacher').value;
+    const schedule = document.getElementById('c-schedule').value;
+
+    const res = await fetch('/api/classes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, teacher_uid, schedule })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        toast('✅ Class created: ' + name, 'success');
+
+        closeModal('modal-add-class');
+
+        await loadClasses();   // 🔥 THIS LINE FIXES YOUR ISSUE
+    }
+}
+
+async function submitEnroll() {
+  const classId = document.getElementById('enroll-class-id').value;
+  const studentId = document.getElementById('enroll-student-id').value;
+
+  console.log("Class:", classId);
+  console.log("Student:", studentId);
+
+  const res = await fetch(`/api/classes/${classId}/enroll`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      student_uid: studentId   // ✅ MATCH BACKEND
+})
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    toast('✅ Student Enrolled Successfully', 'success');
+    closeModal('modal-enroll');
+    await loadClasses();   // refresh UI
+  } else {
+    toast('❌ Error: ' + data.message, 'error');
+  }
+}
+
+
+// ─── DELETE ────────────────────────────────────────────────
+async function removeTeacher(uid, name) {
+  if (!confirm(`Delete teacher "${name}"? This cannot be undone.`)) return;
+  await fetch(`/api/teachers/${uid}`, {method:'DELETE'});
+  loadTeachers(); loadAll(); toast('🗑 Teacher removed', 'error');
+}
+async function removeStudent(uid, name) {
+  if (!confirm(`Delete student "${name}" and their face data?`)) return;
+  await fetch(`/api/students/${uid}`, {method:'DELETE'});
+  loadStudents(); loadAll(); toast('🗑 Student removed', 'error');
+}
+async function removeClass(id, name) {
+  if (!confirm(`Delete class "${name}"?`)) return;
+  await fetch(`/api/classes/${id}`, {method:'DELETE'});
+  loadClasses(); loadAll(); toast('🗑 Class deleted', 'error');
+}
+
+// ─── UI HELPERS ────────────────────────────────────────────
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const login = document.getElementById('login-screen');
+    if (login.style.display !== 'none') adminLogin();
+  }
+});
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+
+async function deleteClass(classId) {
+    const confirmDelete = confirm("Delete this class?");
+    if (!confirmDelete) return;
+
+    try {
+        const res = await fetch(`/api/classes/${classId}`, {
+            method: "DELETE"
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            toast('🗑️ Class deleted successfully', 'error');
+            await loadClasses();
+        } else {
+            toast('❌ Error: ' + data.message, 'error');
+        }
+
+    } catch (err) {
+        console.error(err);
+        toast('❌ Error deleting class', 'error');
+    }
+}
+
+
+
+</script>
+</body>
+</html>
