@@ -159,11 +159,7 @@ Open your browser:
 
 ### Teacher takes attendance
 1. Go to `/teacher` → Login with Gmail/password
-2. Click **Take Attendance** → Select class → Click **Start Face Scan**
-3. Webcam opens on the server machine
-4. Each recognized student → marked **Present**
-5. Unrecognized students → marked **Absent**
-6. View results under **Attendance Records**
+2. View results under **Attendance Records**
 
 ### From command line (alternative)
 ```bash
