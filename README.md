@@ -131,7 +131,7 @@ python app.py
 
 Open your browser:
 - **Home**: http://localhost:5000/
-- **Admin**: http://localhost:5000/admin  → `admin@school.edu` / `Admin@1234`
+- **Admin**: http://localhost:5000/admin  → `admin@gmail.com` / `Admin@123`
 - **Teacher**: http://localhost:5000/teacher
 - **Student**: http://localhost:5000/student
 
@@ -223,8 +223,8 @@ python scripts/register_face.py --student_uid <UID> --image photo.jpg
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ADMIN_EMAIL` | `admin@school.edu` | Admin login email |
-| `ADMIN_PASSWORD` | `Admin@1234` | Admin login password |
+| `ADMIN_EMAIL` | `admin@gmail.com` | Admin login email |
+| `ADMIN_PASSWORD` | `Admin@123` | Admin login password |
 | `FACE_TOLERANCE` | `0.50` | Lower = stricter match (0.0–1.0) |
 | `DEFAULT_SCAN_SECONDS` | `30` | Webcam scan duration |
 | `FLASK_PORT` | `5000` | Server port |
