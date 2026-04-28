@@ -161,11 +161,6 @@ Open your browser:
 1. Go to `/teacher` → Login with Gmail/password
 2. View results under **Attendance Records**
 
-### From command line (alternative)
-```bash
-python scripts/run_attendance_scan.py --class_id ABC12345 --seconds 30
-```
-
 ---
 
 ## 🧪 Demo / Testing
