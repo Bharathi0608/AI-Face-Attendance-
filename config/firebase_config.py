@@ -84,10 +84,10 @@ def init_firebase_admin():
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     service_key_path = os.path.join(BASE_DIR, "config", "serviceAccountKey.json")
 
-    print("🔍 Firebase key path:", service_key_path)
+    print("Firebase key path:", service_key_path)
 
     if not os.path.exists(service_key_path):
-        raise FileNotFoundError("❌ serviceAccountKey.json not found")
+        raise FileNotFoundError("serviceAccountKey.json not found")
 
     cred = credentials.Certificate(service_key_path)
 
@@ -96,7 +96,7 @@ def init_firebase_admin():
     })
 
     _admin_initialized = True
-    print("✅ Firebase initialized")
+    print("Firebase initialized")
 
 
     # 🔥 FIRESTORE

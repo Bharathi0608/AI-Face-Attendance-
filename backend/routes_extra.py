@@ -798,23 +798,100 @@ def create_class_api():
         return jsonify({"success": False, "message": str(e)}), 500
 
 # ✅ ADD THIS NEW FUNCTION BELOW
+# ═════════════════════════════════════════════════════════════════════════════
+#  TIMETABLE CONFIGURATION
+# ═════════════════════════════════════════════════════════════════════════════
+TIMETABLE = {
+    "Kannada": [
+        {"day": "Monday",    "time": "09:15 - 10:15"},
+        {"day": "Tuesday",   "time": "11:30 - 12:30"},
+        {"day": "Thursday",  "time": "09:15 - 10:15"},
+        {"day": "Friday",    "time": "11:30 - 12:30"}
+    ],
+    "Maths": [
+        {"day": "Tuesday",   "time": "09:15 - 10:15"},
+        {"day": "Wednesday", "time": "11:30 - 12:30"},
+        {"day": "Friday",    "time": "09:15 - 10:15"},
+        {"day": "Saturday",  "time": "11:30 - 12:30"}
+    ],
+    "Hindi": [
+        {"day": "Wednesday", "time": "09:15 - 10:15"},
+        {"day": "Monday",    "time": "11:30 - 12:30"},
+        {"day": "Saturday",  "time": "09:15 - 10:15"},
+        {"day": "Thursday",  "time": "11:30 - 12:30"}
+    ],
+    "English": [
+        {"day": "Monday",    "time": "10:15 - 11:15"},
+        {"day": "Tuesday",   "time": "12:30 - 01:30"},
+        {"day": "Thursday",  "time": "10:15 - 11:15"},
+        {"day": "Friday",    "time": "12:30 - 01:30"}
+    ],
+    "Social Science": [
+        {"day": "Tuesday",   "time": "10:15 - 11:15"},
+        {"day": "Wednesday", "time": "12:30 - 01:30"},
+        {"day": "Friday",    "time": "10:15 - 11:15"},
+        {"day": "Saturday",  "time": "12:30 - 01:30"}
+    ],
+    "Science": [
+        {"day": "Wednesday", "time": "10:15 - 11:15"},
+        {"day": "Monday",    "time": "12:30 - 01:30"},
+        {"day": "Saturday",  "time": "10:15 - 11:15"},
+        {"day": "Thursday",  "time": "12:30 - 01:30"}
+    ]
+}
+
 @extra_bp.route("/api/teachers/<teacher_uid>/classes", methods=["GET"])
 def get_classes_for_teacher(teacher_uid):
+    """
+    Returns classes assigned to a teacher.
+    If the teacher has a subject, it returns the 4 slots from the timetable.
+    """
     try:
-        classes_ref = db.collection("classes").stream()
-
-        teacher_classes = []
-
+        # 1. Get teacher profile
+        teacher_doc = db.collection("users").document(teacher_uid).get()
+        if not teacher_doc.exists:
+            return jsonify([])
+        
+        teacher_data = teacher_doc.to_dict()
+        subject = teacher_data.get("subject")
+        
+        # 2. Find any existing classes created by admin for this teacher
+        existing_classes = []
+        classes_ref = db.collection("classes").where("teacher_uid", "==", teacher_uid).stream()
         for doc in classes_ref:
-            data = doc.to_dict()
+            d = doc.to_dict()
+            d["id"] = doc.id
+            existing_classes.append(d)
+            
+        # 3. If teacher has a subject, map the timetable slots
+        # We merge existing class data with timetable schedules
+        teacher_classes = []
+        
+        if subject in TIMETABLE:
+            slots = TIMETABLE[subject]
+            
+            # If admin hasn't created a class object yet, we show virtual ones
+            # or use the first class found for this subject
+            base_class = existing_classes[0] if existing_classes else {
+                "class_id": "TBD",
+                "name": subject,
+                "teacher_uid": teacher_uid,
+                "student_ids": []
+            }
+            
+            for slot in slots:
+                session_class = base_class.copy()
+                session_class["schedule"] = f"{slot['day']} {slot['time']}"
+                # Generate a unique virtual ID if needed, but keeping class_id for records
+                teacher_classes.append(session_class)
+        else:
+            # Fallback to whatever is in the DB
+            teacher_classes = existing_classes
 
-            if data.get("teacher_uid") == teacher_uid:
-                data["id"] = doc.id
-                teacher_classes.append(data)
-
-        return jsonify(teacher_classes)   # ✅ OUTSIDE LOOP
+        return jsonify(teacher_classes)
 
     except Exception as e:
+        print("🔥 GET TEACHER CLASSES ERROR:", e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -824,12 +901,41 @@ def get_teacher_attendance(teacher_uid):
         class_id = request.args.get("class_id")
         day      = request.args.get("date")
         
-        if not class_id:
-            return jsonify({"error": "class_id required"}), 400
+        if not class_id or class_id == "TBD":
+            return jsonify([])
             
-        from backend.firebase_service import get_attendance_for_class_date
+        from backend.firebase_service import get_attendance_for_class_date, mark_attendance
         records = get_attendance_for_class_date(class_id, day)
         
+        # 🔥 PROACTIVE FIREBASE SYNC & MIGRATION:
+        from datetime import date, datetime
+        today = date.today().isoformat()
+        target_day = day or today
+
+        from config.firebase_config import get_firestore
+        db_conn = get_firestore()
+
+        for r in records:
+            # We call mark_attendance to ensure the new format (USN_Name) 
+            # and 'subject' field exist. We only do this if needed or for not_marked.
+            if r.get("status") == "not_marked" or "subject" not in r:
+                mark_attendance(class_id, r["student_uid"], r["status"], target_day)
+        
+        # 🔥 SESSION SUMMARY SYNC:
+        present_count = len([r for r in records if r.get("status") == "present"])
+        absent_count  = len([r for r in records if r.get("status") == "absent"])
+        total_count   = len(records)
+        
+        from config.firebase_config import get_firestore
+        db_conn = get_firestore()
+        db_conn.collection("attendance").document(class_id).collection(target_day).document("--summary--").set({
+            "present":      present_count,
+            "absent":       absent_count,
+            "total":        total_count,
+            "attendance_rate": f"{round(present_count/total_count*100) if total_count > 0 else 0}%",
+            "last_updated": datetime.utcnow().isoformat() + "Z"
+        })
+
         return jsonify(records)
 
     except Exception as e:
@@ -998,6 +1104,7 @@ def scan_frame():
 
         data        = request.get_json(force=True)
         class_id    = data.get("class_id")
+        student_uid = data.get("student_uid") # Optional specific student
         frame_b64   = data.get("frame", "")
 
         if not class_id or not frame_b64:
@@ -1030,11 +1137,17 @@ def scan_frame():
 
         # ── Load enrolled students' encodings from Firestore ───────────────
         db_conn = get_firestore()
-        cls_doc = db_conn.collection("classes").document(class_id).get()
-        if not cls_doc.exists:
-            return jsonify({"error": "Class not found"}), 404
+        
+        if student_uid:
+            # Verify ONLY the selected student
+            student_ids = [student_uid]
+        else:
+            # Fallback: check all students in class (original logic)
+            cls_doc = db_conn.collection("classes").document(class_id).get()
+            if not cls_doc.exists:
+                return jsonify({"error": "Class not found"}), 404
+            student_ids = cls_doc.to_dict().get("student_ids", [])
 
-        student_ids = cls_doc.to_dict().get("student_ids", [])
         if not student_ids:
             return jsonify({"matched": False, "reason": "no_students"})
 
@@ -1047,7 +1160,6 @@ def scan_frame():
             if not user_doc.exists:
                 continue
             user_data = user_doc.to_dict()
-            print(f"DEBUG: Student data for {sid}: {user_data.keys()}")
             enc_list  = user_data.get("face_encoding")
             if not enc_list:
                 continue
@@ -1055,27 +1167,33 @@ def scan_frame():
             known_enc = np.array(enc_list, dtype=float)
             dist      = face_recognition.face_distance([known_enc], frame_enc)[0]
             
-            print(f"DEBUG: Comparing with {user_data.get('name')} - Distance: {dist:.4f}")
-
             if dist < best_match_dist:
                 best_match_dist = dist
                 best_match_uid  = sid
                 best_match_data = user_data
 
-        TOLERANCE = 0.60
+        # ── Strict Tolerance Check ──────────────────────────────────────────
+        # Standard face_recognition tolerance is 0.60.
+        # We use 0.58 for a good balance of accuracy and reliability.
+        TOLERANCE = 0.58
+        
         if best_match_uid and best_match_dist <= TOLERANCE:
-            print(f"✅ MATCH FOUND: {best_match_data.get('name')} (Dist: {best_match_dist:.4f})")
+            print(f"✅ VERIFIED MATCH: {best_match_data.get('name')} (Dist: {best_match_dist:.4f})")
             # ── Mark present in Firestore ──────────────────────────────────
             from datetime import datetime, date
-            today = date.today().isoformat()
+            target_date = data.get("date") or date.today().isoformat()
+            
             db_conn.collection("attendance") \
                    .document(class_id) \
-                   .collection(today) \
+                   .collection(target_date) \
                    .document(best_match_uid) \
                    .set({
                        "status":      "present",
                        "timestamp":   datetime.utcnow().isoformat() + "Z",
-                       "student_uid": best_match_uid
+                       "student_uid": best_match_uid,
+                       "name":        best_match_data.get("name") or "Unknown",
+                       "email":       best_match_data.get("email") or "—",
+                       "roll_number": best_match_data.get("roll_number") or "—"
                    })
 
             return jsonify({
@@ -1091,4 +1209,74 @@ def scan_frame():
 
     except Exception as e:
         print("🔥 SCAN-FRAME ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+@extra_bp.route("/api/attendance", methods=["GET"])
+def get_attendance_api():
+    try:
+        class_id = request.args.get("class_id")
+        day      = request.args.get("date")
+        
+        if not class_id:
+            return jsonify({"error": "class_id required"}), 400
+            
+        from backend.firebase_service import get_attendance_for_class_date
+        records = get_attendance_for_class_date(class_id, day)
+        return jsonify(records)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ================= EXTRA UTILS =================
+
+@extra_bp.route("/api/classes/<class_id>/students", methods=["GET"])
+def get_class_students(class_id):
+    try:
+        from backend.firebase_service import get_all_students
+        
+        cls_doc = db.collection("classes").document(class_id).get()
+        if not cls_doc.exists:
+            return jsonify({"error": "Class not found"}), 404
+            
+        student_ids = cls_doc.to_dict().get("student_ids", [])
+        all_students = get_all_students()
+        
+        class_students = [s for s in all_students if s["uid"] in student_ids]
+        
+        # 🔥 AUTO-INITIALIZE for Firebase Console:
+        # If any of these students don't have a record for today, create a 'not_marked' entry.
+        from backend.firebase_service import mark_attendance
+        from datetime import date
+        today = date.today().isoformat()
+        
+        # We check records for this class/today
+        db_conn = get_firestore()
+        existing_docs = db_conn.collection("attendance").document(class_id).collection(today).stream()
+        existing_uids = [doc.id for doc in existing_docs]
+        
+        for s in class_students:
+            if s["uid"] not in existing_uids:
+                mark_attendance(class_id, s["uid"], "not_marked", today)
+        
+        return jsonify(class_students)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@extra_bp.route("/api/attendance/mark-absent", methods=["POST"])
+def mark_absent_api():
+    try:
+        data = request.json
+        class_id = data.get("class_id")
+        student_uid = data.get("student_uid")
+        
+        if not class_id or not student_uid:
+            return jsonify({"error": "class_id and student_uid required"}), 400
+            
+        from backend.firebase_service import mark_attendance
+        mark_attendance(class_id, student_uid, "absent")
+        
+        return jsonify({"success": True})
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

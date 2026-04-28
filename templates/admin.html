@@ -112,10 +112,17 @@
   /* TABLE */
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; padding: 10px 16px; border-bottom: 1px solid var(--border); }
-  td { padding: 14px 16px; border-bottom: 1px solid rgba(30,30,46,0.6); font-size: 14px; vertical-align: middle; }
+  table th { text-align: left; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; padding: 16px; border-bottom: 1px solid var(--border); }
+  table td { padding: 16px; border-bottom: 1px solid rgba(30,30,46,0.6); font-size: 14px; vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--surface2); }
+
+  /* EQUAL SPACING FOR COLUMNS */
+  table th:nth-child(1), table td:nth-child(1) { width: 30%; } /* Name */
+  table th:nth-child(2), table td:nth-child(2) { width: 15%; } /* Roll No */
+  table th:nth-child(3), table td:nth-child(3) { width: 25%; } /* Email */
+  table th:nth-child(4), table td:nth-child(4) { width: 15%; } /* Classes */
+  table th:nth-child(5), table td:nth-child(5) { width: 15%; text-align: right; } /* Action */
 
   .avatar {
     width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
@@ -222,12 +229,8 @@
       <div class="nav-item" onclick="showTab('teachers')">
         <span class="nav-icon">🎓</span> Teachers
       </div>
-      <div class="nav-item" onclick="showTab('students')">
-        <span class="nav-icon">👤</span> Students
-      </div>
-      <div class="nav-item" onclick="showTab('classes')">
-        <span class="nav-icon">📚</span> Classes
-      </div>
+      <div class="nav-item" onclick="showTab('students')"><div class="nav-icon">👤</div>Students</div>
+      <div class="nav-item" onclick="showTab('classes')"><div class="nav-icon">📚</div>Classes</div>
     </nav>
     <div class="sidebar-footer">
       <div class="nav-item" onclick="logout()" style="border-radius:10px;">
@@ -539,11 +542,11 @@ async function loadTeachers() {
   }
   tbody.innerHTML = allTeachers.map(t => `
     <tr>
-      <td style="width:30%"><div class="name-cell"><div class="avatar">${t.name?.[0]||'?'}</div>${t.name}</div></td>
-      <td style="color:var(--muted); width:35%; overflow: hidden; text-overflow: ellipsis;">${t.email}</td>
+      <td style="width:25%"><div class="name-cell"><div class="avatar">${t.name?.[0]||'?'}</div>${t.name}</div></td>
+      <td style="color:var(--muted); width:30%; overflow: hidden; text-overflow: ellipsis;">${t.email}</td>
       <td style="width:15%"><span class="badge badge-purple">${t.subject||'—'}</span></td>
-      <td style="width:10%">${(t.class_ids||[]).length} class(es)</td>
-      <td style="width:10%; text-align: right;"><button class="btn btn-danger btn-sm" onclick="removeTeacher('${t.uid}','${t.name}')">Delete</button></td>
+      <td style="width:15%; white-space: nowrap; font-weight: 600;">${(t.class_ids||[]).length} Classes</td>
+      <td style="width:15%; text-align: right;"><button class="btn btn-danger btn-sm" onclick="removeTeacher('${t.uid}','${t.name}')">Delete</button></td>
     </tr>`).join('');
 }
 
@@ -557,14 +560,13 @@ async function loadStudents() {
   }
   tbody.innerHTML = allStudents.map(s => `
     <tr>
-      <td style="width:30%"><div class="name-cell">
+      <td style="width:25%"><div class="name-cell">
         ${s.image_url ? `<img src="${s.image_url}" class="avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover">` : `<div class="avatar">${s.name?.[0]||'?'}</div>`}
         ${s.name}</div></td>
       <td style="width:15%"><span class="badge badge-green">${s.roll_number||'—'}</span></td>
-      <td style="color:var(--muted); width:35%; overflow: hidden; text-overflow: ellipsis;">${s.email||'—'}</td>
-      
-      <td style="width:10%">${(s.class_ids||[]).length} class(es)</td>
-      <td style="width:10%; text-align: right;"><button class="btn btn-danger btn-sm" onclick="removeStudent('${s.uid}','${s.name}')">Delete</button></td>
+      <td style="color:var(--muted); width:30%; overflow: hidden; text-overflow: ellipsis;">${s.email||'—'}</td>
+      <td style="width:15%; white-space: nowrap; font-weight: 600;">${(s.class_ids||[]).length} Classes</td>
+      <td style="width:15%; text-align: right;"><button class="btn btn-danger btn-sm" onclick="removeStudent('${s.uid}','${s.name}')">Delete</button></td>
     </tr>`).join('');
 }
 
@@ -636,6 +638,37 @@ function populateTeacherSelect() {
   const sel = document.getElementById('c-teacher');
   sel.innerHTML = '<option value="">— Select a teacher —</option>' +
     allTeachers.map(t => `<option value="${t.uid}">${t.name} (${t.subject||'—'})</option>`).join('');
+  
+  // ✅ Add change listener to auto-fill schedule
+  sel.onchange = updateScheduleField;
+}
+
+const TIMETABLE_SUMMARY = {
+  "Maths": "Tue, Fri (09:15) • Wed, Sat (11:30)",
+  "English": "Mon, Thu (10:15) • Tue, Fri (12:30)",
+  "Science": "Mon, Thu (12:30) • Wed, Sat (10:15)",
+  "Kannada": "Mon, Thu (09:15) • Tue, Fri (11:30)",
+  "Hindi": "Mon, Thu (11:30) • Wed, Sat (09:15)",
+  "Social Science": "Tue, Fri (10:15) • Wed, Sat (12:30)",
+  "Social Sci": "Tue, Fri (10:15) • Wed, Sat (12:30)"
+};
+
+function updateScheduleField() {
+  const teacherUid = document.getElementById('c-teacher').value;
+  const scheduleInput = document.getElementById('c-schedule');
+  const nameInput = document.getElementById('c-name');
+  
+  const teacher = allTeachers.find(t => t.uid === teacherUid);
+  if (teacher && teacher.subject) {
+    // Auto-fill schedule
+    if (TIMETABLE_SUMMARY[teacher.subject]) {
+      scheduleInput.value = TIMETABLE_SUMMARY[teacher.subject];
+    }
+    // Also suggest class name if empty
+    if (!nameInput.value) {
+      nameInput.value = teacher.subject;
+    }
+  }
 }
 
 

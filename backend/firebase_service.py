@@ -1453,6 +1453,16 @@ def get_all_students():
 
 
 def delete_student(uid):
+    from google.cloud.firestore_v1 import ArrayRemove
+    
+    # 1. Remove student from all classes they are enrolled in
+    classes = db.collection("classes").where("student_ids", "array_contains", uid).stream()
+    for doc in classes:
+        db.collection("classes").document(doc.id).update({
+            "student_ids": ArrayRemove([uid])
+        })
+        
+    # 2. Delete the student record
     db.collection("users").document(uid).delete()
 
 
@@ -1521,43 +1531,80 @@ def enroll_student_in_class(student_uid, class_id):
     return True, "Enrolled successfully"
 
 def delete_class(class_id):
+    db = get_firestore()
     db.collection("classes").document(class_id).delete()
 
 
     # ================= ATTENDANCE =================
 
 def mark_attendance(class_id, student_uid, status, today=None):
+    db = get_firestore()
     today = today or date.today().isoformat()
+    
+    # Fetch student details for better console visibility
+    student_doc = db.collection("users").document(student_uid).get()
+    s_data = student_doc.to_dict() if student_doc.exists else {}
 
-    db.collection("attendance").document(class_id).collection(today).document(student_uid).set({
-        "status": status,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "student_uid": student_uid
-    })
+    # Fetch Class Name for the 'Subject' field
+    class_doc = db.collection("classes").document(class_id).get()
+    c_data = class_doc.to_dict() if class_doc.exists else {}
+    subject_name = c_data.get("name", "Unknown Class")
+
+    # Readable Document ID for Firebase Console: USN_Name
+    # Fallback to UID if name/roll is missing
+    doc_id = f"{s_data.get('roll_number', 'NA')}_{s_data.get('name', 'Unknown')}"
+    if doc_id == "NA_Unknown": doc_id = student_uid
+
+    db.collection("attendance").document(class_id).collection(today).document(doc_id).set({
+        "status":       status,
+        "timestamp":    datetime.utcnow().isoformat() + "Z",
+        "student_uid":  student_uid,
+        "name":         s_data.get("name", "Unknown"),
+        "email":        s_data.get("email", "—"),
+        "roll_number":  s_data.get("roll_number", "—"),
+        "subject":      subject_name,
+        "class_id":     class_id
+    }, merge=True)
 
 
 def get_attendance_for_class_date(class_id, day=None):
     day = day or date.today().isoformat()
 
+    # 1. Get class to see which students are enrolled
+    class_doc = db.collection("classes").document(class_id).get()
+    if not class_doc.exists:
+        return []
+    
+    enrolled_uids = class_doc.to_dict().get("student_ids", [])
+    
+    # 2. Get attendance records for this day
     docs = db.collection("attendance").document(class_id).collection(day).stream()
-    attendance_records = [doc.to_dict() for doc in docs]
+    attendance_map = {doc.id: doc.to_dict() for doc in docs}
     
-    # Fetch all students to join data (more efficient than querying one by one)
-    students = {s["uid"]: s for s in get_all_students()}
+    # 3. Get all students info
+    all_students = {s["uid"]: s for s in get_all_students()}
     
-    for record in attendance_records:
-        uid = record.get("student_uid")
-        if uid in students:
-            s_info = students[uid]
-            record["name"] = s_info.get("name", "Unknown")
-            record["roll_number"] = s_info.get("roll_number", "—")
-            record["email"] = s_info.get("email", "—")
-        else:
-            record["name"] = "Unknown Student"
-            record["roll_number"] = "—"
-            record["email"] = "—"
+    full_report = []
+    for uid in enrolled_uids:
+        s_info = all_students.get(uid, {"name": "Unknown", "email": "—", "roll_number": "—"})
+        
+        # Merge with attendance record if it exists
+        record = attendance_map.get(uid, {
+            "status": "not_marked",
+            "timestamp": None,
+            "student_uid": uid
+        })
+        
+        full_report.append({
+            "student_uid": uid,
+            "name":        s_info.get("name"),
+            "roll_number": s_info.get("roll_number"),
+            "email":       s_info.get("email"),
+            "status":      record.get("status"),
+            "timestamp":   record.get("timestamp")
+        })
             
-    return attendance_records
+    return full_report
 
 
 def get_attendance_summary(class_id):

@@ -7,174 +7,122 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:       #0a0a0f;
-    --surface:  #12121a;
-    --surface2: #1a1a26;
-    --border:   #1e1e2e;
-    --accent:   #ff6b6b;
-    --accent2:  #7c5cfc;
-    --green:    #00d4aa;
-    --amber:    #f0a500;
-    --text:     #e8e8f0;
-    --muted:    #6b6b85;
+    --bg: #050508; --surface: #0f0f16; --surface2: #161621;
+    --border: #1e1e2e; --accent: #00d4aa; --accent-glow: rgba(0,212,170,0.3);
+    --text: #e8e8f0; --muted: #6b6b85; --red: #ff6b6b;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
+    font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden;
   }
 
-  /* Background glow */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at 70% 20%, rgba(255,107,107,0.07) 0%, transparent 55%),
-      radial-gradient(ellipse at 20% 80%, rgba(124,92,252,0.06) 0%, transparent 55%);
-    pointer-events: none;
-    z-index: 0;
+  /* Animated Particles Background */
+  .bg-particles {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
   }
-
-  /* Grid overlay */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,107,107,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,107,107,0.02) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
+  .particle {
+    position: absolute; background: var(--accent); border-radius: 50%; opacity: 0.1;
+    filter: blur(2px); animation: floatParticle 15s linear infinite;
   }
-
-  .back-link {
-    position: fixed;
-    top: 20px; left: 20px;
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    z-index: 10;
-    transition: color 0.2s;
+  @keyframes floatParticle {
+    0% { transform: translateY(110vh) translateX(0) scale(0); opacity: 0; }
+    20% { opacity: 0.15; }
+    80% { opacity: 0.15; }
+    100% { transform: translateY(-10vh) translateX(20px) scale(1); opacity: 0; }
   }
-  .back-link:hover { color: var(--text); }
 
   .container {
     position: relative; z-index: 1;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 40px 20px;
+    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
-
-  /* ── STEP INDICATOR ── */
-  .steps {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 36px;
-  }
-  .step {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 600; color: var(--muted);
-    transition: all 0.4s cubic-bezier(.4,0,.2,1);
-  }
-  .step.active  { border-color: var(--accent);  color: var(--accent);  background: rgba(255,107,107,0.12); }
-  .step.done    { border-color: var(--green);   color: var(--green);   background: rgba(0,212,170,0.12); }
-  .step-label   { font-size: 11px; color: var(--muted); white-space: nowrap; }
-  .step-line    { flex: 1; height: 2px; background: var(--border); border-radius: 2px; max-width: 50px; transition: background 0.4s; }
-  .step-line.done { background: var(--green); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
   /* ── CARD ── */
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 28px;
-    padding: 48px;
-    width: 100%; max-width: 540px;
-    animation: fadeUp 0.45s ease;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 32px;
+    padding: 32px 40px; width: 100%; max-width: 520px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    position: relative; overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .card-icon { font-size: 48px; margin-bottom: 16px; text-align: center; }
+  .card:hover { transform: translateY(-4px); }
+  
+  .card::after {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: hScan 4s linear infinite;
+    opacity: 0.5;
+  }
+  @keyframes hScan { 0% { left: -100%; } 100% { left: 100%; } }
+
+  .card-icon { font-size: 48px; margin-bottom: 16px; text-align: center; animation: floatIcon 3s ease-in-out infinite; }
+  @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
   .card h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px; font-weight: 800;
-    text-align: center; margin-bottom: 8px;
+    font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800;
+    text-align: center; margin-bottom: 8px; letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
   .card .subtitle {
-    color: var(--muted); text-align: center;
-    font-size: 14px; margin-bottom: 32px; line-height: 1.6;
+    color: var(--muted); text-align: center; font-size: 14px; margin-bottom: 32px; line-height: 1.6;
   }
 
   /* ── SELECT ── */
-  .form-group { margin-bottom: 20px; }
+  .form-group { margin-bottom: 28px; }
   label {
-    display: block; font-size: 11px; font-weight: 600;
-    color: var(--muted); letter-spacing: 1.5px;
-    text-transform: uppercase; margin-bottom: 8px;
+    display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+  }
+  select, input[type="date"] {
+    width: 100%; padding: 18px 22px; background: var(--surface2); border: 2px solid var(--border);
+    border-radius: 18px; color: var(--text); font-family: inherit; font-size: 16px;
+    outline: none; transition: all 0.3s; appearance: none;
   }
   select {
-    width: 100%; padding: 14px 44px 14px 16px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    color: var(--text); font-family: inherit; font-size: 15px;
-    outline: none; transition: border-color 0.2s; appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b85' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b6b85' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 18px center;
   }
-  select:focus { border-color: var(--accent); }
+  select:focus, input[type="date"]:focus { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); transform: scale(1.01); }
 
   /* ── CLASS PREVIEW ── */
   .class-info {
-    background: var(--surface2); border-radius: 14px;
-    padding: 16px 20px; margin-bottom: 20px;
-    display: flex; align-items: center; gap: 14px;
-    border: 1px solid var(--border);
-    animation: fadeUp 0.3s ease;
+    background: var(--surface2); border-radius: 18px; padding: 20px 24px;
+    margin-bottom: 24px; display: flex; align-items: center; gap: 16px;
+    border: 1px solid var(--border); animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
   .class-info-badge {
-    background: rgba(124,92,252,0.15); color: var(--accent2);
-    padding: 6px 12px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; letter-spacing: 1px; white-space: nowrap;
+    background: rgba(0,212,170,0.15); color: var(--accent);
+    padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800;
+    letter-spacing: 1px; white-space: nowrap; text-transform: uppercase;
   }
-  .class-info-name  { font-weight: 500; font-size: 15px; }
-  .class-info-meta  { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .class-info-name  { font-weight: 700; font-size: 17px; }
+  .class-info-meta  { color: var(--muted); font-size: 13px; margin-top: 4px; }
 
   /* ── BUTTONS ── */
   .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; padding: 16px;
-    border: none; border-radius: 16px;
-    font-family: inherit; font-size: 15px; font-weight: 600;
-    cursor: pointer; transition: all 0.25s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+    width: 100%; padding: 18px; border: none; border-radius: 20px;
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative; overflow: hidden;
   }
   .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #ff3f3f);
-    color: #fff;
-    box-shadow: 0 8px 24px rgba(255,107,107,0.25);
+    background: linear-gradient(135deg, var(--accent), #00b38f); color: #050508;
+    box-shadow: 0 10px 30px var(--accent-glow);
   }
-  .btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,107,107,0.35); }
-  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .btn-primary:not(:disabled):hover { transform: scale(1.02) translateY(-2px); box-shadow: 0 15px 40px var(--accent-glow); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
 
   .btn-secondary {
     background: var(--surface2); border: 1px solid var(--border);
-    color: var(--muted); font-size: 14px;
-    padding: 12px; border-radius: 12px; margin-top: 12px;
+    color: var(--muted); font-size: 14px; padding: 14px; border-radius: 14px; margin-top: 16px;
   }
-  .btn-secondary:hover { color: var(--text); border-color: var(--text); }
+  .btn-secondary:hover { color: var(--text); border-color: var(--text); background: var(--border); }
 
   /* ── TIP ── */
   .scan-tip {
@@ -329,23 +277,31 @@
     background: linear-gradient(90deg, var(--accent2), var(--accent));
     border-radius: 99px;
     width: 100%;
-    transition: width 1s linear;
+    transition: width 10s linear;
   }
 </style>
 </head>
 <body>
-<a class="back-link" href="/">← All portals</a>
+<div class="bg-particles" id="bg-particles"></div>
+<script>
+  // Generate floating particles
+  const bg = document.getElementById('bg-particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.width = p.style.height = (Math.random() * 5 + 2) + 'px';
+    p.style.animationDelay = Math.random() * 20 + 's';
+    p.style.animationDuration = (Math.random() * 10 + 10) + 's';
+    bg.appendChild(p);
+  }
+</script>
+<div style="position: fixed; top: 20px; left: 20px; display: flex; gap: 20px; z-index: 10;">
+  <a class="back-link" href="/" style="position: static;">← All portals</a>
+  <a class="back-link" href="/timetable" style="position: static;">📅 View Timetable</a>
+</div>
 
 <div class="container">
-
-  <!-- STEP INDICATOR -->
-  <div class="steps">
-    <div class="step active" id="step1">1</div>
-    <div class="step-line" id="line1"></div>
-    <div class="step" id="step2">2</div>
-    <div class="step-line" id="line2"></div>
-    <div class="step" id="step3">✓</div>
-  </div>
 
   <!-- ───── STEP 1 : SELECT CLASS ───── -->
   <div id="screen-select" class="card">
@@ -360,7 +316,19 @@
       </select>
     </div>
 
+    <div class="form-group">
+      <label>Session Date</label>
+      <input type="date" id="scan-date" readonly style="cursor: default; opacity: 0.8; filter: brightness(0.9);">
+    </div>
+
     <div id="class-preview" class="hidden"></div>
+
+    <div class="form-group hidden" id="student-group">
+      <label>Your Identity (Name & Gmail)</label>
+      <select id="student-select">
+        <option value="">— Select your name —</option>
+      </select>
+    </div>
 
     <button id="join-btn" class="btn btn-primary" onclick="goToScan()" disabled>
       📷 &nbsp;Open Camera &amp; Scan Face →
@@ -404,7 +372,7 @@
     <!-- Countdown bar -->
     <div class="countdown-wrap" id="countdown-wrap">
       <div class="countdown-label">
-        <span id="countdown-msg">Scanning…</span>
+        <span id="countdown-msg">See the camera to scan…</span>
         <span id="countdown-secs">10s</span>
       </div>
       <div class="countdown-track">
@@ -430,23 +398,22 @@
 ════════════════════════════════════════════════════════════════════ */
 let allClasses    = [];
 let selectedClass = null;
+let classStudents = [];
+let selectedStudent = null;
 let mediaStream   = null;
 let scanInterval  = null;
 let scanTimeout   = null;   // 10-second hard stop
 let scanDone      = false;
+let isSending     = false;
+
+// Set default date
+document.getElementById('scan-date').value = new Date().toISOString().split('T')[0];
 
 /* ════════════════════════════════════════════════════════════════════
    STEP HELPERS
 ════════════════════════════════════════════════════════════════════ */
 function setStep(n) {
-  for (let i = 1; i <= 3; i++) {
-    const s = document.getElementById('step' + i);
-    s.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
-    if (i < 3) {
-      const l = document.getElementById('line' + i);
-      if (l) l.className = 'step-line' + (i < n ? ' done' : '');
-    }
-  }
+  // Steps removed from UI
 }
 
 function showScreen(id) {
@@ -479,14 +446,17 @@ async function loadClasses() {
   }
 }
 
-document.getElementById('class-select').addEventListener('change', function() {
+document.getElementById('class-select').addEventListener('change', async function() {
   const classId = this.value;
   const btn     = document.getElementById('join-btn');
   const preview = document.getElementById('class-preview');
+  const sGroup  = document.getElementById('student-group');
+  const sSelect = document.getElementById('student-select');
 
   if (!classId) {
     btn.disabled = true;
     preview.classList.add('hidden');
+    sGroup.classList.add('hidden');
     selectedClass = null;
     return;
   }
@@ -505,7 +475,37 @@ document.getElementById('class-select').addEventListener('change', function() {
           </div>
         </div>
       </div>`;
+
+    // Fetch students for this class
+    sSelect.innerHTML = '<option value="">Loading students…</option>';
+    sGroup.classList.remove('hidden');
+    try {
+      const res = await fetch(`/api/classes/${classId}/students`);
+      classStudents = await res.json();
+      if (!classStudents.length) {
+        sSelect.innerHTML = '<option value="">No students enrolled</option>';
+      } else {
+        sSelect.innerHTML = '<option value="">— Select your name —</option>' +
+          classStudents.map(s => `<option value="${s.uid}">${s.name} (${s.email})</option>`).join('');
+      }
+    } catch (e) {
+      sSelect.innerHTML = '<option value="">Error loading students</option>';
+    }
   }
+  btn.disabled = true; // Still disabled until student is selected
+});
+
+document.getElementById('student-select').addEventListener('change', function() {
+  const studentUid = this.value;
+  const btn = document.getElementById('join-btn');
+  
+  if (!studentUid) {
+    selectedStudent = null;
+    btn.disabled = true;
+    return;
+  }
+  
+  selectedStudent = classStudents.find(s => s.uid === studentUid);
   btn.disabled = false;
 });
 
@@ -548,7 +548,7 @@ const SCAN_TIMEOUT_MS = 10000;   // 10 seconds
 function startFrameLoop() {
   scanDone = false;
   document.getElementById('scan-laser').style.display = '';
-  setCamStatus('Scanning… Keep your face centred', false);
+  setCamStatus('Scanning… Look at the camera', false);
 
   // Start countdown bar
   const bar = document.getElementById('countdown-bar');
@@ -560,7 +560,7 @@ function startFrameLoop() {
   // Live seconds display
   let secsLeft = Math.round(SCAN_TIMEOUT_MS / 1000);
   document.getElementById('countdown-secs').textContent = secsLeft + 's';
-  document.getElementById('countdown-msg').textContent = 'Scanning… look at the camera';
+  document.getElementById('countdown-msg').textContent = 'See the camera to scan…';
 
   const secTick = setInterval(() => {
     secsLeft--;
@@ -574,54 +574,53 @@ function startFrameLoop() {
     if (!scanDone) onScanTimeout();
   }, SCAN_TIMEOUT_MS);
 
-  // Send a frame every 1.5 seconds
-  scanInterval = setInterval(sendFrame, 1500);
+  // Send a frame every 1 second (faster retries for better match)
+  scanInterval = setInterval(sendFrame, 1000);
 }
 
 async function sendFrame() {
-  if (scanDone) return;
-
+  if (scanDone || isSending) return;
+  
   const video  = document.getElementById('webcam-video');
   const canvas = document.getElementById('snap-canvas');
-
-  canvas.width  = video.videoWidth  || 640;
-  canvas.height = video.videoHeight || 480;
-
-  const ctx = canvas.getContext('2d');
-  // Un-mirror before sending to server (server sees normal orientation)
-  ctx.save();
-  ctx.scale(-1, 1);
-  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-  ctx.restore();
-
-  const frameB64 = canvas.toDataURL('image/jpeg', 0.85);
+  if (!video || !canvas || video.paused) return;
 
   try {
-    const res  = await fetch('/api/attendance/scan-frame', {
-      method:  'POST',
+    isSending = true;
+    canvas.width  = 400; // Even smaller for speed
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    const frameB64 = canvas.toDataURL('image/jpeg', 0.7);
+
+    console.log("📤 Sending frame for verification...");
+    const res = await fetch('/api/attendance/scan-frame', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ class_id: selectedClass.class_id, frame: frameB64 })
+      body: JSON.stringify({ 
+        class_id: selectedClass.class_id, 
+        student_uid: selectedStudent.uid,
+        frame: frameB64,
+        date: document.getElementById('scan-date').value
+      })
     });
     const data = await res.json();
 
-    if (data.error) {
-      setCamStatus('⚠️ ' + data.error, false);
-      return;
-    }
-
     if (data.matched) {
+      console.log("✅ Match Found:", data.name);
       onMatchFound(data);
     } else {
-      const hints = {
-        no_face:    'No face detected — move closer or improve lighting',
-        no_match:   'Face not recognised — make sure you\'re enrolled in this class',
-        no_students:'No students enrolled in this class yet'
-      };
-      setCamStatus(hints[data.reason] || 'Scanning…', false);
+      console.log("⌛ No match yet:", data.reason);
+      setCamStatus(data.reason === 'no_face' ? 'Move closer to camera' : 'Scanning…', false);
     }
-
   } catch (e) {
-    setCamStatus('Network error — retrying…', false);
+    console.warn("Scan frame error:", e);
+  } finally {
+    isSending = false;
   }
 }
 
@@ -654,16 +653,41 @@ function onMatchFound(data) {
 /* ════════════════════════════════════════════════════════════════════
    TIMEOUT — no match in 10 s
 ════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   TIMEOUT — no match in 10 s
+════════════════════════════════════════════════════════════════════ */
 function onScanTimeout() {
   if (scanDone) return;
-  scanDone = true;
+  // Note: We don't set scanDone = true yet to give 1.2s grace for pending matches
+  
   clearInterval(scanInterval);
-
   document.getElementById('scan-laser').style.display = 'none';
-  setCamStatus('⚠️ Time up — face not recognised', false);
+  setCamStatus('⚠️ Time up — checking final result...', false);
 
-  setTimeout(() => {
+  // Give a small grace period (1.2s) for any last-second match requests to finish
+  setTimeout(async () => {
+    // 🛑 Re-check scanDone. If a match was found during this grace period, STOP.
+    if (scanDone) {
+      console.log("Match was found during grace period. Attendance already marked.");
+      return;
+    }
+
+    // Now we are SURE no match was found.
+    scanDone = true;
     stopCamera();
+    setCamStatus('❌ Verification failed — marked Absent', false);
+    
+    try {
+      await fetch('/api/attendance/mark-absent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          class_id: selectedClass.class_id,
+          student_uid: selectedStudent.uid
+        })
+      });
+    } catch (e) { console.error("Error marking absent:", e); }
+
     showNoMatchScreen();
   }, 1200);
 }
@@ -675,11 +699,10 @@ function showNoMatchScreen() {
   document.getElementById('result-content').innerHTML = `
     <div class="result-card result-absent">
       <div class="result-icon">❌</div>
-      <div class="result-status">Not Recognised</div>
+      <div class="result-status">Verification Failed</div>
       <div class="result-detail" style="margin-top:8px; line-height:1.7;">
-        Your face was not matched within 10 seconds.<br>
-        Make sure you are <strong style="color:var(--text);">enrolled in this class</strong>
-        and your face photo is registered.
+        We could not verify your identity as <strong style="color:var(--text);">${selectedStudent.name}</strong>.<br>
+        You have been marked <strong style="color:var(--accent);">Absent</strong> for this session.
       </div>
       <div style="margin-top:18px; background:rgba(255,107,107,0.08); border-radius:10px;
                   padding:10px 14px; font-size:12px; color:var(--muted);">
@@ -745,8 +768,11 @@ function cancelScan() {
 
 function resetFlow() {
   selectedClass = null;
+  selectedStudent = null;
   document.getElementById('class-select').value = '';
+  document.getElementById('student-select').value = '';
   document.getElementById('class-preview').classList.add('hidden');
+  document.getElementById('student-group').classList.add('hidden');
   document.getElementById('join-btn').disabled = true;
   document.getElementById('match-overlay').classList.remove('show');
   setStep(1);

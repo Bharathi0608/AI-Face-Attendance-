@@ -737,6 +737,11 @@ def student():
     return render_template("student.html")
 
 
+@app.route("/timetable")
+def timetable():
+    return render_template("timetable.html")
+
+
 # ================= AUTH =================
 
 @app.route("/api/admin/login", methods=["POST"])

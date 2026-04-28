@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Simple Timetable — FaceAttend</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #7c5cfc;
+    
+    /* Subject Colors (Clean & Distinct) */
+    --kannada: #ef4444;
+    --english: #3b82f6;
+    --hindi:   #f59e0b;
+    --science: #8b5cf6;
+    --maths:   #f97316;
+    --social:  #10b981;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 40px 10px;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .table-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow-x: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+  }
+
+  th {
+    background: rgba(255,255,255,0.03);
+    padding: 16px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 6px;
+    border: 1px solid var(--border);
+    text-align: center;
+    height: 60px;
+    vertical-align: middle;
+  }
+
+  /* Compact Subject Boxes */
+  .time-col {
+    width: 110px;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 13px;
+    background: rgba(255,255,255,0.01);
+  }
+
+  .subject {
+    height: 40px;
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 5px;
+    transition: transform 0.2s;
+  }
+
+  .subject:hover {
+    transform: scale(0.98);
+  }
+
+  .kannada { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .english { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+  .hindi   { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+  .science { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
+  .maths   { background: rgba(249, 115, 22, 0.15); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.3); }
+  .social  { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+  .break-row td {
+    background: rgba(255,255,255,0.02);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    height: 40px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .dismissal-row td {
+    background: rgba(124, 92, 252, 0.05);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 4px;
+    height: 45px;
+    border: 1px dashed rgba(124, 92, 252, 0.2);
+    text-transform: uppercase;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <a href="/" class="back-btn">← Back to Dashboard</a>
+    <h1>Academic Schedule</h1>
+    <p class="subtitle">Monday - Saturday • Classes conclude at 01:30 PM</p>
+  </header>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="time-col">09:15 - 10:15</td>
+          <td><span class="subject kannada">Kannada</span></td>
+          <td><span class="subject maths">Maths</span></td>
+          <td><span class="subject hindi">Hindi</span></td>
+          <td><span class="subject kannada">Kannada</span></td>
+          <td><span class="subject maths">Maths</span></td>
+          <td><span class="subject hindi">Hindi</span></td>
+        </tr>
+        <tr>
+          <td class="time-col">10:15 - 11:15</td>
+          <td><span class="subject english">English</span></td>
+          <td><span class="subject social">Social Sci</span></td>
+          <td><span class="subject science">Science</span></td>
+          <td><span class="subject english">English</span></td>
+          <td><span class="subject social">Social Sci</span></td>
+          <td><span class="subject science">Science</span></td>
+        </tr>
+        <tr class="break-row">
+          <td class="time-col">11:15 - 11:30</td>
+          <td colspan="6">Short Break</td>
+        </tr>
+        <tr>
+          <td class="time-col">11:30 - 12:30</td>
+          <td><span class="subject hindi">Hindi</span></td>
+          <td><span class="subject kannada">Kannada</span></td>
+          <td><span class="subject maths">Maths</span></td>
+          <td><span class="subject hindi">Hindi</span></td>
+          <td><span class="subject kannada">Kannada</span></td>
+          <td><span class="subject maths">Maths</span></td>
+        </tr>
+        <tr>
+          <td class="time-col">12:30 - 01:30</td>
+          <td><span class="subject science">Science</span></td>
+          <td><span class="subject english">English</span></td>
+          <td><span class="subject social">Social Sci</span></td>
+          <td><span class="subject science">Science</span></td>
+          <td><span class="subject english">English</span></td>
+          <td><span class="subject social">Social Sci</span></td>
+        </tr>
+        <tr class="dismissal-row">
+          <td class="time-col">01:30 PM</td>
+          <td colspan="6">SCHOOL DISMISSAL</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>
