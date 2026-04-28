@@ -10,7 +10,7 @@ Three separate portals — Admin, Teacher, Student — with real-time webcam fac
 | Portal | What it can do |
 |--------|---------------|
 | **Admin** | Login with hardcoded credentials · Add/delete teachers (creates Firebase Auth account) · Add/delete students with face photo registration · Create classes · Enroll students into classes |
-| **Teacher** | Login with Gmail + password (assigned by admin) · View assigned classes · Start face-recognition attendance scan · View daily attendance records · Export CSV reports |
+| **Teacher** | Login with Gmail + password (assigned by admin) · View assigned classes · View daily attendance records |
 | **Student** | Select active class · Trigger face scan · See present/absent result in real time |
 
 ---
@@ -22,7 +22,7 @@ Three separate portals — Admin, Teacher, Student — with real-time webcam fac
 - **Database**: Firebase Firestore
 - **Auth**: Firebase Authentication (email/password)
 - **Storage**: Firebase Storage (face photos)
-- **Frontend**: Vanilla HTML/CSS/JS (dark theme, no frameworks needed)
+- **Frontend**: HTML/CSS/JS (dark theme, no frameworks needed)
 
 ---
 
