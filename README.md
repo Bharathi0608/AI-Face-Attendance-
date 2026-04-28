@@ -226,7 +226,7 @@ python scripts/register_face.py --student_uid <UID> --image photo.jpg
 | `ADMIN_EMAIL` | `admin@gmail.com` | Admin login email |
 | `ADMIN_PASSWORD` | `Admin@123` | Admin login password |
 | `FACE_TOLERANCE` | `0.50` | Lower = stricter match (0.0–1.0) |
-| `DEFAULT_SCAN_SECONDS` | `30` | Webcam scan duration |
+| `DEFAULT_SCAN_SECONDS` | `10` | Webcam scan duration |
 | `FLASK_PORT` | `5000` | Server port |
 | `FLASK_DEBUG` | `true` | Debug mode |
 
