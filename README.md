@@ -10,7 +10,7 @@ Three separate portals — Admin, Teacher, Student — with real-time webcam fac
 | Portal | What it can do |
 |--------|---------------|
 | **Admin** | Login with hardcoded credentials · Add/delete teachers (creates Firebase Auth account) · Add/delete students with face photo registration · Create classes · Enroll students into classes |
-| **Teacher** | Login with Gmail + password (assigned by admin) · View assigned classes · Start face-recognition attendance scan · View daily attendance records · Export CSV reports |
+| **Teacher** | Login with Gmail + password (assigned by admin) · View assigned classes · View daily attendance records |
 | **Student** | Select active class · Trigger face scan · See present/absent result in real time |
 
 ---
@@ -22,7 +22,7 @@ Three separate portals — Admin, Teacher, Student — with real-time webcam fac
 - **Database**: Firebase Firestore
 - **Auth**: Firebase Authentication (email/password)
 - **Storage**: Firebase Storage (face photos)
-- **Frontend**: Vanilla HTML/CSS/JS (dark theme, no frameworks needed)
+- **Frontend**: HTML/CSS/JS (dark theme, no frameworks needed)
 
 ---
 
@@ -131,7 +131,7 @@ python app.py
 
 Open your browser:
 - **Home**: http://localhost:5000/
-- **Admin**: http://localhost:5000/admin  → `admin@school.edu` / `Admin@1234`
+- **Admin**: http://localhost:5000/admin  → `admin@gmail.com` / `Admin@123`
 - **Teacher**: http://localhost:5000/teacher
 - **Student**: http://localhost:5000/student
 
@@ -159,16 +159,7 @@ Open your browser:
 
 ### Teacher takes attendance
 1. Go to `/teacher` → Login with Gmail/password
-2. Click **Take Attendance** → Select class → Click **Start Face Scan**
-3. Webcam opens on the server machine
-4. Each recognized student → marked **Present**
-5. Unrecognized students → marked **Absent**
-6. View results under **Attendance Records**
-
-### From command line (alternative)
-```bash
-python scripts/run_attendance_scan.py --class_id ABC12345 --seconds 30
-```
+2. View results under **Attendance Records**
 
 ---
 
@@ -223,10 +214,10 @@ python scripts/register_face.py --student_uid <UID> --image photo.jpg
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ADMIN_EMAIL` | `admin@school.edu` | Admin login email |
-| `ADMIN_PASSWORD` | `Admin@1234` | Admin login password |
+| `ADMIN_EMAIL` | `admin@gmail.com` | Admin login email |
+| `ADMIN_PASSWORD` | `Admin@123` | Admin login password |
 | `FACE_TOLERANCE` | `0.50` | Lower = stricter match (0.0–1.0) |
-| `DEFAULT_SCAN_SECONDS` | `30` | Webcam scan duration |
+| `DEFAULT_SCAN_SECONDS` | `10` | Webcam scan duration |
 | `FLASK_PORT` | `5000` | Server port |
 | `FLASK_DEBUG` | `true` | Debug mode |
 
